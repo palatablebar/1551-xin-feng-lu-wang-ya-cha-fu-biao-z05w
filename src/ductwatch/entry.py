@@ -1,6 +1,6 @@
 import argparse
 from functools import cache
-from json import dumps
+from json import dumps, loads
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -24,13 +24,16 @@ def limits(capacity=12,strategy='balanced'):
 def public_plan(payload):
     if not isinstance(payload,dict):
         raise ValueError('须为 JSON 对象')
-    legal={'records','as_of','capacity','strategy'} if 'records' in payload else {'capacity','strategy'}
+    legal={'records','as_of','capacity','strategy','receipts'} if 'records' in payload else {'capacity','strategy','receipts'}
     if payload.keys()-legal:
         raise ValueError('单据字段未登记')
     options=limits(payload.get('capacity',12),payload.get('strategy','balanced'))
     if 'records' not in payload:
+        if 'receipts' in payload:
+            fixture=open_fixture()
+            return execute(fixture['records'],options.capacity,options.strategy,as_of=fixture['as_of'],receipts=payload['receipts'])
         return preview(options.capacity,options.strategy)
-    return execute(payload['records'],options.capacity,options.strategy,as_of=payload.get('as_of',96))
+    return execute(payload['records'],options.capacity,options.strategy,as_of=payload.get('as_of',96),receipts=payload.get('receipts'))
 
 
 class WorkbenchView(MethodView):
@@ -81,6 +84,12 @@ def cli_evaluate(options):
     request_data={'capacity':options.capacity,'strategy':options.strategy}
     if options.input:
         request_data.update(open_fixture(options.input))
+    if options.receipts:
+        document=loads(options.receipts.read_text(encoding='utf-8'))
+        tickets=document.get('receipts') if isinstance(document,dict) else document
+        if not isinstance(tickets,list):
+            raise ValueError('回执文件须包含 receipts 数组')
+        request_data['receipts']=tickets
     return dumps(public_plan(request_data),ensure_ascii=False,indent=2,allow_nan=False)+'\n'
 
 
@@ -91,6 +100,7 @@ def main():
     parser.add_argument('--capacity',type=int,default=12)
     parser.add_argument('--strategy',default='balanced')
     parser.add_argument('--input',type=Path)
+    parser.add_argument('--receipts',type=Path)
     parser.add_argument('--output',type=Path)
     options=parser.parse_args()
     if options.command=='serve':

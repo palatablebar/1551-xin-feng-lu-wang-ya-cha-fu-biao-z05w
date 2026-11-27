@@ -15,7 +15,7 @@ AI/ML · 传统ML · 中型
 | M5 | 标定回放 | 回放误差及可信区间 | `src/ductwatch/fan_replay/service.py` | `tests/test_fan_replay.py` |
 | M6 | 机房分组 | 差异定位和外推审查 | `src/ductwatch/building_cohorts/service.py` | `tests/test_building_cohorts.py` |
 | M7 | 过滤复标 | 硬规则与额度分配 | `src/ductwatch/filter_inspection/service.py` | `tests/test_filter_inspection.py` |
-| M8 | 设备核销 | 单据及额度证据 | `src/ductwatch/hvac_reconciliation/service.py` | `tests/test_hvac_reconciliation.py` |
+| M8 | 设备核销 | 单据及额度证据、换网实测核销 | `src/ductwatch/hvac_reconciliation/service.py`、`src/ductwatch/hvac_reconciliation/settlement.py` | `tests/test_hvac_reconciliation.py`、`tests/test_settlement.py` |
 
 ## 深度登记
 
@@ -30,3 +30,7 @@ AI/ML · 传统ML · 中型
 | TRAP-44 | 校准样本不足 | 分派前转人工判读并保留原因 | `src/ductwatch/fan_replay/service.py` | `tests/test_fan_replay.py::test_empty_calibration_requires_review` |
 | TRAP-53 | 单条推断与混批 | 复用冻结参数，各条估计完全一致 | `src/ductwatch/flow_subspace/service.py` | `tests/test_flow_subspace.py::test_input_batch_invariance` |
 | TRAP-54 | 特征版本与模型不配对 | 拒绝继续推断并要求重拟合 | `src/ductwatch/flow_subspace/service.py` | `tests/test_flow_subspace.py::test_mismatched_model_input_version_fails` |
+| TRAP-61 | 换档后直接对比前后分数 | 换算 65% 标准档再对照历史正常参照，降档不算降险 | `src/ductwatch/hvac_reconciliation/settlement.py` | `tests/test_settlement.py::test_gear_shift_is_not_mistaken_for_filter_effect` |
+| TRAP-62 | 回执乱序或重复重跑 | 版次决议加内容指纹，重跑不重复释放工位 | `src/ductwatch/hvac_reconciliation/settlement.py` | `tests/test_settlement.py::test_replay_out_of_order_never_releases_twice` |
+| TRAP-63 | 派单后晚到的实绩 | 参照只用派单时已确认实绩，晚到不补入 | `src/ductwatch/hvac_reconciliation/settlement.py` | `tests/test_settlement.py::test_late_confirmed_record_not_added_to_reference` |
+| TRAP-64 | 实测命中暂停规则 | 即便降险也不销单，继续占位 | `src/ductwatch/hvac_reconciliation/settlement.py` | `tests/test_settlement.py::test_pause_rule_blocks_settlement_even_when_risk_drops` |

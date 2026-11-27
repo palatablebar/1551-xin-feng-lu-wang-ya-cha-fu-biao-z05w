@@ -10,6 +10,7 @@ from .fan_replay import service as calibration_service
 from .building_cohorts import service as monitor_service
 from .filter_inspection import service as dispatch_service
 from .hvac_reconciliation import service as audit_service
+from .hvac_reconciliation import settlement as settlement_service
 from .pressure_epochs import contracts as window_contract
 
 PRESET = Path(__file__).resolve().parents[2] / 'sample_data' / 'duct_checklists_sample.json'
@@ -81,11 +82,13 @@ def replay_metrics(report):
     return result
 
 
-def execute(documents, capacity=12, mode='balanced', *, as_of=96):
+def execute(documents, capacity=12, mode='balanced', *, as_of=96, receipts=None):
     if type(as_of) is not int or not 91 <= as_of <= 3650:
         raise ValueError('截止日须为第 91 日至第 3650 日之间的整数')
     if not isinstance(documents, (list, tuple)) or not 1 <= len(documents) <= 2500:
         raise ValueError('单据批次须包含 1 到 2500 条记录')
+    if receipts is not None and (not isinstance(receipts, list) or len(receipts) > settlement_service.RECEIPT_LIMIT):
+        raise ValueError('回执批次须为不超过 2500 条的对象数组')
     intake = intake_service.load_samples(documents, as_of)
     window_rule = replace(window_contract.WindowRule.standard(allow_censor=False), as_of=as_of)
     windows = cohort_service.build_windows(intake.entries, window_rule)
@@ -105,6 +108,12 @@ def execute(documents, capacity=12, mode='balanced', *, as_of=96):
     coverage = monitor_service.coverage_by_group(features.calibration, features.live)
     allocation = dispatch_service.plan_jobs(checked_live, drift.domain, capacity, mode)
     closed = audit_service.close_batch(documents, intake, windows, allocation, state.fingerprint, kernel.name, mode)
+    voucher = None
+    if receipts is not None:
+        # 换网实测核销沿用派单时冻结的特征、模型、校准与参照，回执不进入派单批次
+        reference = settlement_service.build_reference(windows, state, kernel, fitted_calibration)
+        voucher = settlement_service.settle(allocation, receipts, reference, state, kernel,
+                                            fitted_calibration, closed.stamp)
     states = dict(closed.totals.states)
     overview = [
         {'label': '当班新风机组', 'value': len(allocation.jobs)},
@@ -148,10 +157,14 @@ def execute(documents, capacity=12, mode='balanced', *, as_of=96):
         row['joint_experiments'] = feature_service.render_joint_experiments(current,state,estimate)
     details[7]['records'].extend(audit_service.site_checklist(row_list))
     details[7]['records'].extend(audit_service.intervention_summary(row_list))
+    if voucher is not None:
+        details[7]['records'].extend(settlement_service.decision_rows(voucher))
+        details[7]['summary'] += f' · 核销释放 {voucher.released} / {voucher.occupied} 工位'
     overview_report = {'capacity' : capacity, 'mode': mode, 'as_of': as_of, 'sample_hash': closed.batch_hash,
               'policy_hash': closed.policy_hash, 'feature_stamp': state.fingerprint,
               'model': kernel.name, 'run_id': closed.stamp, 'object_name': DISPLAY['object_name'],
               'unit': DISPLAY['unit'], 'sections': details, 'flow_counts': list(states.items()),
+              'settlement': None if voucher is None else settlement_service.settlement_evidence(voucher),
               'measures': {'pressure_pa': ('滤网压差', 'Pa'),
  'fan_pct': ('风机档位', '%'),
  'flow_cmh': ('供风量', 'm³/h'),

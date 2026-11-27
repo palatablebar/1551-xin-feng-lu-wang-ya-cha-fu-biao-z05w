@@ -8,10 +8,11 @@
 docker compose up -d --build
 ```
 
-访问 `http://127.0.0.1:18650`。样例是可复算的模拟班次，涵盖正常历史、较迟回执、最新冲突版、缺测单和临时分区。
+访问 `http://127.0.0.1:18650`。样例是可复算的模拟班次，涵盖正常历史、较迟回执、最新冲突版、缺测单和临时分区。换网实测回执样例见 `sample_data/filter_receipts_sample.json`，附在派单请求中即可核销已派复标单。
 
 ```sh
 docker compose exec -T app python -m ductwatch.entry evaluate --capacity 8 --strategy focus
+docker compose exec -T app python -m ductwatch.entry evaluate --receipts sample_data/filter_receipts_sample.json
 docker compose exec -T app pytest -q
 docker compose down --remove-orphans
 ```

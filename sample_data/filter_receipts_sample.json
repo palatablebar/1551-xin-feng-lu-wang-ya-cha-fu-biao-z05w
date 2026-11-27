@@ -1,0 +1,19 @@
+{
+  "as_of": 96,
+  "receipts": [
+    {"key": "AF-1253", "day": 97, "received": 97, "revision": 1,
+     "pressure_pa": 77, "fan_pct": 52, "flow_cmh": 1120, "pm_index": 58, "open_pct": 68, "since_days": 4},
+    {"key": "AF-1254", "day": 97, "received": 97, "revision": 1,
+     "pressure_pa": 164, "fan_pct": 48, "flow_cmh": 812, "pm_index": 60, "open_pct": 70, "since_days": 4},
+    {"key": "AF-1256", "day": 97, "received": 97, "revision": 1,
+     "pressure_pa": 280, "fan_pct": 90, "flow_cmh": 1150, "pm_index": 50, "open_pct": 75, "since_days": 4},
+    {"key": "AF-1262", "day": 97, "received": 97, "revision": 1,
+     "pressure_pa": 80, "fan_pct": 55, "flow_cmh": null, "pm_index": 55, "open_pct": 65, "since_days": 4},
+    {"key": "AF-1273", "day": 97, "received": 97, "revision": 1,
+     "pressure_pa": 90, "fan_pct": 58, "flow_cmh": 1250, "pm_index": 60, "open_pct": 66, "since_days": 5},
+    {"key": "AF-1273", "day": 97, "received": 98, "revision": 1,
+     "pressure_pa": 140, "fan_pct": 58, "flow_cmh": 1250, "pm_index": 60, "open_pct": 66, "since_days": 5},
+    {"key": "AF-9999", "day": 97, "received": 97, "revision": 1,
+     "pressure_pa": 90, "fan_pct": 60, "flow_cmh": 1200, "pm_index": 55, "open_pct": 66, "since_days": 4}
+  ]
+}
